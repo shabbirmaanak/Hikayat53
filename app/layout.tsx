@@ -31,10 +31,10 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'حكاية | Hikayat — Bilingual Storytelling Platform',
+  title: 'حكاية | Hikayat',
   description:
-    'A bilingual, Arabic-English storytelling platform running on Turso Database (libSQL) with custom Kanz al Lulu calligraphy typography.',
-  keywords: ['Arabic storytelling', 'Hikayat', 'Kanz al Lulu font', 'Turso libSQL', 'Arabic lexicon'],
+    'Classical Arabic storytelling platform running on Turso Database with Kanz al Lulu calligraphy typography.',
+  keywords: ['Arabic storytelling', 'Hikayat', 'Kanz al Lulu font', 'Turso libSQL'],
 };
 
 export default function RootLayout({

@@ -26,10 +26,6 @@ export default function Navbar() {
           >
             Library
           </Link>
-          <span className="text-[#D5CEC2]">•</span>
-          <span className="text-[11px] text-[#8C8578]">
-            Bilingual Reader
-          </span>
         </div>
       </div>
     </header>
