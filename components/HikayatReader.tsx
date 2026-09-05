@@ -2,15 +2,14 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Share2, Check, BookOpen } from 'lucide-react';
-import { HikayatStory, StorySegment, VocabularyGloss } from '@/lib/db';
+import { ArrowLeft, Share2, Check } from 'lucide-react';
+import { HikayatStory, VocabularyGloss } from '@/lib/db';
 import VocabularyModal from './VocabularyModal';
 
 type ViewMode = 'dual' | 'arabic' | 'english';
-type FontSize = 'sm' | 'md' | 'lg';
+type FontSize = 'sm' | 'md' | 'lg' | 'xl';
 
 export default function HikayatReader({ story }: { story: HikayatStory }) {
-  const [activeSegmentIndex, setActiveSegmentIndex] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('dual');
   const [fontSize, setFontSize] = useState<FontSize>('md');
   const [selectedGloss, setSelectedGloss] = useState<VocabularyGloss | null>(null);
@@ -58,17 +57,19 @@ export default function HikayatReader({ story }: { story: HikayatStory }) {
     });
   };
 
-  // Font size classes
+  // Font size classes with generous calligraphy line-height
   const arabicFontClasses = {
-    sm: 'text-xl sm:text-2xl leading-loose',
-    md: 'text-2xl sm:text-3xl leading-loose',
-    lg: 'text-3xl sm:text-4xl leading-loose',
+    sm: 'text-2xl leading-[2.4]',
+    md: 'text-3xl sm:text-4xl leading-[2.6]',
+    lg: 'text-4xl sm:text-5xl leading-[2.8]',
+    xl: 'text-5xl sm:text-6xl leading-[3.0]',
   }[fontSize];
 
   const englishFontClasses = {
     sm: 'text-xs leading-relaxed',
-    md: 'text-sm leading-relaxed',
-    lg: 'text-base leading-relaxed',
+    md: 'text-sm sm:text-base leading-relaxed',
+    lg: 'text-base sm:text-lg leading-relaxed',
+    xl: 'text-lg sm:text-xl leading-relaxed',
   }[fontSize];
 
   return (
@@ -122,14 +123,14 @@ export default function HikayatReader({ story }: { story: HikayatStory }) {
             {/* Font Size Toggle */}
             <button
               onClick={() => {
-                const sizes: FontSize[] = ['sm', 'md', 'lg'];
+                const sizes: FontSize[] = ['sm', 'md', 'lg', 'xl'];
                 const next = sizes[(sizes.indexOf(fontSize) + 1) % sizes.length];
                 setFontSize(next);
               }}
               className="px-2 py-1 bg-[#FFFFFF] border border-[#E7E2D8] rounded-lg text-xs font-mono text-[#636059] hover:text-[#1A1918] transition shadow-xs"
               title="Adjust Font Size"
             >
-              A{fontSize === 'lg' ? '+' : fontSize === 'sm' ? '-' : ''}
+              A{fontSize === 'xl' ? '++' : fontSize === 'lg' ? '+' : fontSize === 'sm' ? '-' : ''}
             </button>
 
             {/* Share */}
@@ -148,87 +149,74 @@ export default function HikayatReader({ story }: { story: HikayatStory }) {
         </div>
       </nav>
 
-      {/* Reader Main Body */}
-      <main className="max-w-3xl mx-auto w-full px-4 sm:px-6 py-12 flex-1">
-        {/* Story Header */}
-        <header className="mb-12 text-center space-y-3 border-b border-[#E7E2D8] pb-8">
-          <div className="inline-flex items-center gap-2 text-[11px] font-mono text-[#8C8578]">
-            <span className="uppercase tracking-wider font-semibold text-[#92400E]">
-              {story.category}
-            </span>
-            {story.moral_theme && (
-              <>
-                <span>·</span>
-                <span>{story.moral_theme}</span>
-              </>
+      {/* Open-Book Story Manuscript Canvas */}
+      <main className="max-w-3xl mx-auto w-full px-5 sm:px-8 py-10 sm:py-16 flex-1">
+        <article className="bg-[#FFFFFF] border border-[#E7E2D8] rounded-2xl p-6 sm:p-12 shadow-[0_4px_24px_rgba(0,0,0,0.03)] space-y-10">
+          {/* Story Header */}
+          <header className="text-center space-y-4 border-b border-[#EAE4D9] pb-8">
+            <div className="inline-flex items-center gap-2 text-[11px] font-mono text-[#8C8578]">
+              <span className="uppercase tracking-widest font-semibold text-[#92400E]">
+                {story.category}
+              </span>
+              {story.moral_theme && story.moral_theme !== 'Wisdom & Moral Theme (حكمة وعبرة)' && (
+                <>
+                  <span>·</span>
+                  <span>{story.moral_theme}</span>
+                </>
+              )}
+            </div>
+
+            <h1
+              dir="rtl"
+              className="text-3xl sm:text-5xl font-bold font-arabic text-[#1A1918] leading-[2.0] tracking-normal"
+            >
+              {story.title_arabic}
+            </h1>
+
+            {story.title_english && story.title_english !== story.title_arabic && (
+              <p className="text-xs sm:text-sm text-[#7A7468] font-mono">
+                {story.title_english}
+              </p>
             )}
-          </div>
+          </header>
 
-          <h1
-            dir="rtl"
-            className="text-3xl sm:text-5xl font-bold font-arabic text-[#1A1918] leading-tight pt-1"
-          >
-            {story.title_arabic}
-          </h1>
-
-          {story.title_english && (
-            <p className="text-sm sm:text-base text-[#524D44] font-sans">
-              {story.title_english}
-            </p>
-          )}
-        </header>
-
-        {/* Story Paragraphs / Segments */}
-        <div className="space-y-6 pb-20">
-          {story.segments && story.segments.length > 0 ? (
-            story.segments.map((seg, idx) => {
-              const isActive = activeSegmentIndex === idx;
-              return (
-                <div
-                  key={seg.id}
-                  onClick={() => setActiveSegmentIndex(isActive ? null : idx)}
-                  className={`group relative rounded-xl p-5 sm:p-6 transition-all duration-200 cursor-pointer ${
-                    isActive
-                      ? 'bg-[#FFFFFF] border border-[#DCD5C8] shadow-[0_2px_8px_rgba(0,0,0,0.04)] text-[#1A1918]'
-                      : 'hover:bg-[#F2ECE1]/40 text-[#524D44]'
-                  }`}
-                >
-                  {/* Segment Focus Indicator */}
-                  {isActive && (
-                    <span className="absolute left-0 top-3 bottom-3 w-1 bg-[#B45309] rounded-r" />
-                  )}
-
-                  {/* Arabic Text */}
+          {/* Continuous Open-Book Story Narrative */}
+          <div className="space-y-8 text-[#1A1918]">
+            {story.segments && story.segments.length > 0 ? (
+              story.segments.map((seg, idx) => (
+                <div key={seg.id || idx} className="space-y-3">
+                  {/* Arabic Paragraph Flow */}
                   {viewMode !== 'english' && seg.text_arabic && (
                     <p
                       dir="rtl"
-                      className={`font-arabic ${arabicFontClasses} text-right transition-colors ${
-                        isActive ? 'text-[#1A1918] font-bold' : 'text-[#2D2A26] group-hover:text-[#1A1918]'
-                      }`}
+                      className={`font-arabic ${arabicFontClasses} text-right text-[#1A1918] selection:bg-[#FEF3C7]`}
                     >
                       {renderArabicText(seg.text_arabic)}
                     </p>
                   )}
 
-                  {/* English Text */}
-                  {viewMode !== 'arabic' && seg.text_english && (
+                  {/* Parallel English Translation */}
+                  {viewMode !== 'arabic' && seg.text_english && !seg.text_english.startsWith('Segment ') && (
                     <p
-                      className={`${englishFontClasses} mt-2.5 font-sans transition-colors ${
-                        isActive ? 'text-[#3D3A35] font-medium' : 'text-[#636059] group-hover:text-[#45423C]'
-                      }`}
+                      className={`${englishFontClasses} font-sans text-[#636059] border-t border-[#F2ECE1] pt-2`}
                     >
                       {seg.text_english}
                     </p>
                   )}
                 </div>
-              );
-            })
-          ) : (
-            <div className="text-center py-12 text-[#636059] font-arabic text-xl" dir="rtl">
-              {story.title_arabic}
-            </div>
-          )}
-        </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-[#636059] font-arabic text-2xl" dir="rtl">
+                {story.title_arabic}
+              </div>
+            )}
+          </div>
+
+          {/* Classical End Ornament */}
+          <div className="text-center pt-8 border-t border-[#EAE4D9] text-[#C5BEB2] text-xl font-arabic">
+            ❦
+          </div>
+        </article>
       </main>
 
       {/* Lexicon Modal */}

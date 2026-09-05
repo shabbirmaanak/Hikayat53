@@ -27,7 +27,6 @@ body {
   color: var(--foreground);
   font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
-  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -55,10 +54,14 @@ body {
   background: #C9C2B5;
 }
 
-/* Arabic / Kanz al Lulu Typography Enhancements */
-.font-arabic {
+/* Arabic / Kanz al Lulu Classical Typography & Ligatures */
+.font-arabic,
+[dir="rtl"],
+.font-arabic * {
   font-family: var(--font-kanz), 'Kanz al Lulu', var(--font-arabic), 'Amiri', serif;
-  font-feature-settings: "cv01" on, "ss01" on;
+  letter-spacing: normal !important;
+  word-spacing: normal !important;
+  font-feature-settings: "liga" 1, "calt" 1, "clig" 1, "mkmk" 1, "mark" 1;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
