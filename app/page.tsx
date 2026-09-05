@@ -7,7 +7,17 @@ import StoryGrid from '@/components/StoryGrid';
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const stories = await getAllStories();
+  let stories = [];
+  let dbError = false;
+
+  try {
+    stories = await getAllStories();
+  } catch (err) {
+    console.error('Failed to load stories on HomePage:', err);
+    dbError = true;
+  }
+
+  const isMissingEnv = !process.env.TURSO_DATABASE_URL;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF9F5] text-[#1A1918]">
@@ -31,6 +41,16 @@ export default async function HomePage() {
             Explore classical Arabic parables, history, and moral tales with tap-to-reveal root morphology and parallel bilingual reading.
           </p>
         </section>
+
+        {/* Missing Turso Credentials Banner for Vercel */}
+        {isMissingEnv && (
+          <div className="bg-[#FFFBEB] border border-[#FDE68A] p-5 rounded-xl space-y-2 text-xs text-[#92400E]">
+            <p className="font-bold text-sm text-[#B45309]">⚙️ Vercel Environment Variables Needed</p>
+            <p className="text-[#78350F]">
+              To connect your live stories on Vercel, please add <code className="bg-[#FEF3C7] px-1 py-0.5 rounded font-mono">TURSO_DATABASE_URL</code> and <code className="bg-[#FEF3C7] px-1 py-0.5 rounded font-mono">TURSO_AUTH_TOKEN</code> in your <strong>Vercel Dashboard &gt; Project Settings &gt; Environment Variables</strong>, then click <strong>Redeploy</strong>.
+            </p>
+          </div>
+        )}
 
         {/* Stories Catalog */}
         <section className="space-y-6">
