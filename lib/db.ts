@@ -1,24 +1,21 @@
-import { createClient, Client } from '@libsql/client';
+import { createClient, Client } from '@libsql/client/web';
 
 let cachedClient: Client | null = null;
 
 export function getDb(): Client | null {
   if (cachedClient) return cachedClient;
 
-  const url = process.env.TURSO_DATABASE_URL;
+  let url = process.env.TURSO_DATABASE_URL || 'file:hikayat_local.db';
   const authToken = process.env.TURSO_AUTH_TOKEN;
 
-  // In production (Vercel), if credentials are not configured, log a clear warning
-  if (!url) {
-    if (process.env.NODE_ENV === 'production') {
-      console.warn('TURSO_DATABASE_URL is not defined in Vercel environment variables.');
-      return null;
-    }
+  // Convert libsql:// to https:// for reliable HTTP fetch on Vercel Serverless
+  if (url.startsWith('libsql://')) {
+    url = url.replace(/^libsql:\/\//, 'https://');
   }
 
   try {
     cachedClient = createClient({
-      url: url || 'file:hikayat_local.db',
+      url,
       authToken: authToken || undefined,
     });
     return cachedClient;

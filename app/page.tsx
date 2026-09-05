@@ -1,5 +1,5 @@
 import React from 'react';
-import { getAllStories } from '@/lib/db';
+import { getAllStories, StoryMetadata } from '@/lib/db';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import StoryGrid from '@/components/StoryGrid';
@@ -7,14 +7,12 @@ import StoryGrid from '@/components/StoryGrid';
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  let stories = [];
-  let dbError = false;
+  let stories: StoryMetadata[] = [];
 
   try {
     stories = await getAllStories();
   } catch (err) {
     console.error('Failed to load stories on HomePage:', err);
-    dbError = true;
   }
 
   const isMissingEnv = !process.env.TURSO_DATABASE_URL;
