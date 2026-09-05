@@ -6,11 +6,9 @@ import { ArrowLeft, Share2, Check } from 'lucide-react';
 import { HikayatStory, VocabularyGloss } from '@/lib/db';
 import VocabularyModal from './VocabularyModal';
 
-type ViewMode = 'dual' | 'arabic' | 'english';
 type FontSize = 'sm' | 'md' | 'lg' | 'xl';
 
 export default function HikayatReader({ story }: { story: HikayatStory }) {
-  const [viewMode, setViewMode] = useState<ViewMode>('dual');
   const [fontSize, setFontSize] = useState<FontSize>('md');
   const [selectedGloss, setSelectedGloss] = useState<VocabularyGloss | null>(null);
   const [copied, setCopied] = useState(false);
@@ -86,40 +84,6 @@ export default function HikayatReader({ story }: { story: HikayatStory }) {
           </Link>
 
           <div className="flex items-center gap-2">
-            {/* View Mode Switcher */}
-            <div className="flex bg-[#EAE4D9]/70 p-0.5 rounded-lg border border-[#E0D8CB] text-xs font-mono">
-              <button
-                onClick={() => setViewMode('dual')}
-                className={`px-2 py-1 rounded transition ${
-                  viewMode === 'dual'
-                    ? 'bg-[#FFFFFF] text-[#78350F] font-semibold shadow-xs'
-                    : 'text-[#636059] hover:text-[#1A1918]'
-                }`}
-              >
-                Dual
-              </button>
-              <button
-                onClick={() => setViewMode('arabic')}
-                className={`px-2 py-1 rounded transition ${
-                  viewMode === 'arabic'
-                    ? 'bg-[#FFFFFF] text-[#78350F] font-semibold shadow-xs'
-                    : 'text-[#636059] hover:text-[#1A1918]'
-                }`}
-              >
-                عربي
-              </button>
-              <button
-                onClick={() => setViewMode('english')}
-                className={`px-2 py-1 rounded transition ${
-                  viewMode === 'english'
-                    ? 'bg-[#FFFFFF] text-[#78350F] font-semibold shadow-xs'
-                    : 'text-[#636059] hover:text-[#1A1918]'
-                }`}
-              >
-                EN
-              </button>
-            </div>
-
             {/* Font Size Toggle */}
             <button
               onClick={() => {
@@ -127,10 +91,13 @@ export default function HikayatReader({ story }: { story: HikayatStory }) {
                 const next = sizes[(sizes.indexOf(fontSize) + 1) % sizes.length];
                 setFontSize(next);
               }}
-              className="px-2 py-1 bg-[#FFFFFF] border border-[#E7E2D8] rounded-lg text-xs font-mono text-[#636059] hover:text-[#1A1918] transition shadow-xs"
+              className="px-2.5 py-1 bg-[#FFFFFF] border border-[#E7E2D8] rounded-lg text-xs font-mono text-[#636059] hover:text-[#1A1918] transition shadow-xs flex items-center gap-1"
               title="Adjust Font Size"
             >
-              A{fontSize === 'xl' ? '++' : fontSize === 'lg' ? '+' : fontSize === 'sm' ? '-' : ''}
+              <span>Font</span>
+              <span className="font-bold text-[#92400E]">
+                {fontSize === 'xl' ? 'XL' : fontSize === 'lg' ? 'L' : fontSize === 'sm' ? 'S' : 'M'}
+              </span>
             </button>
 
             {/* Share */}
@@ -173,11 +140,13 @@ export default function HikayatReader({ story }: { story: HikayatStory }) {
               {story.title_arabic}
             </h1>
 
-            {story.title_english && story.title_english !== story.title_arabic && (
-              <p className="text-xs sm:text-sm text-[#7A7468] font-mono">
-                {story.title_english}
-              </p>
-            )}
+            {story.title_english &&
+              story.title_english !== story.title_arabic &&
+              !story.title_english.startsWith('Hikayat ') && (
+                <p className="text-xs sm:text-sm text-[#7A7468] font-mono">
+                  {story.title_english}
+                </p>
+              )}
           </header>
 
           {/* Continuous Open-Book Story Narrative */}
@@ -186,7 +155,7 @@ export default function HikayatReader({ story }: { story: HikayatStory }) {
               story.segments.map((seg, idx) => (
                 <div key={seg.id || idx} className="space-y-3">
                   {/* Arabic Paragraph Flow */}
-                  {viewMode !== 'english' && seg.text_arabic && (
+                  {seg.text_arabic && (
                     <p
                       dir="rtl"
                       className={`font-arabic ${arabicFontClasses} text-right text-[#1A1918] selection:bg-[#FEF3C7]`}
@@ -195,8 +164,8 @@ export default function HikayatReader({ story }: { story: HikayatStory }) {
                     </p>
                   )}
 
-                  {/* Parallel English Translation */}
-                  {viewMode !== 'arabic' && seg.text_english && !seg.text_english.startsWith('Segment ') && (
+                  {/* Parallel English Translation if custom translation exists */}
+                  {seg.text_english && !seg.text_english.startsWith('Segment ') && (
                     <p
                       className={`${englishFontClasses} font-sans text-[#636059] border-t border-[#F2ECE1] pt-2`}
                     >
