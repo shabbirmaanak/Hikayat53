@@ -7,10 +7,7 @@ import fs from 'fs';
 import path from 'path';
 
 /**
- * Hikayat Excel & CSV Ingestion Script
- *
- * Supports 3-column format (id, title_arabic, text_arabic)
- * as well as full multi-column formats.
+ * Hikayat Excel Ingestion Script (100% Full-Text Preservation)
  */
 
 const url = process.env.TURSO_DATABASE_URL || 'file:hikayat_local.db';
@@ -25,13 +22,11 @@ function findExcelFile(): string | null {
   }
 
   const commonNames = [
+    'Hikayat - Excel.xlsx',
     'hikayat_114.xlsx',
     'hikayat.xlsx',
     'stories.xlsx',
-    'hikayat_114.csv',
-    'hikayat.csv',
     'hikayat_template.csv',
-    'stories.csv',
   ];
 
   for (const name of commonNames) {
@@ -67,40 +62,33 @@ function getColumnValue(row: Record<string, any>, possibleNames: string[]): any 
   return null;
 }
 
-function autoSegmentText(
+// Preserves full text, splitting strictly on manual paragraph newlines if present
+function parseParagraphs(
   arabicText: string,
-  englishText: string,
-  totalDurationMs: number
+  englishText: string
 ): Array<{ segment_order: number; text_arabic: string; text_english: string; audio_start_ms: number; audio_end_ms: number }> {
-  // Split Arabic by sentence punctuation or newlines
-  const arSentences = arabicText
-    .split(/(?<=[.!?؛؟\n])\s+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
+  // If there are explicit newlines, split by paragraphs; otherwise keep 100% complete story as 1 block
+  const arParagraphs = arabicText.includes('\n')
+    ? arabicText.split(/\r?\n+/).map((p) => p.trim()).filter((p) => p.length > 0)
+    : [arabicText.trim()];
 
-  const enSentences = englishText
-    ? englishText
-        .split(/(?<=[.!?\n])\s+/)
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0)
-    : [];
+  const enParagraphs = englishText.includes('\n')
+    ? englishText.split(/\r?\n+/).map((p) => p.trim()).filter((p) => p.length > 0)
+    : englishText ? [englishText.trim()] : [];
 
-  const count = Math.max(arSentences.length, 1);
-  const segmentDuration = Math.floor(totalDurationMs / count);
-
+  const count = Math.max(arParagraphs.length, 1);
   const segments = [];
+
   for (let i = 0; i < count; i++) {
-    const ar = arSentences[i] || arabicText;
-    const en = enSentences[i] || (englishText ? englishText : `Segment ${i + 1}`);
-    const startMs = i * segmentDuration;
-    const endMs = i === count - 1 ? totalDurationMs : (i + 1) * segmentDuration;
+    const ar = arParagraphs[i] || arabicText;
+    const en = enParagraphs[i] || (englishText ? englishText : '');
 
     segments.push({
       segment_order: i + 1,
       text_arabic: ar,
       text_english: en,
-      audio_start_ms: startMs,
-      audio_end_ms: endMs,
+      audio_start_ms: i * 10000,
+      audio_end_ms: (i + 1) * 10000,
     });
   }
 
@@ -116,7 +104,7 @@ async function importExcel() {
   }
 
   console.log(`\n📖 Loading spreadsheet: ${filePath}...`);
-  const workbook = XLSX.readFile(filePath, { codepage: 65001 }); // UTF-8
+  const workbook = XLSX.readFile(filePath, { raw: false, cellText: false });
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
   const rows: any[] = XLSX.utils.sheet_to_json(worksheet);
@@ -130,19 +118,19 @@ async function importExcel() {
     const storyNum = idx + 1;
     const paddedNum = String(storyNum).padStart(3, '0');
 
-    // 1. Resolve ID
+    // 1. ID
     const rawId = getColumnValue(row, ['id', 'story_id', 'number', 'no', 'code', 'slug']);
     const id = rawId ? String(rawId).trim() : `hikayat-${paddedNum}`;
 
-    // 2. Resolve Arabic Title
+    // 2. Arabic Title
     const rawTitleAr = getColumnValue(row, ['title_arabic', 'arabic_title', 'title_ar', 'arabic', 'عنوان', 'العنوان']);
     const titleArabic = rawTitleAr ? String(rawTitleAr).trim() : `الحكاية ${storyNum}`;
 
-    // 3. Resolve English Title
+    // 3. English Title
     const rawTitleEn = getColumnValue(row, ['title_english', 'english_title', 'title_en', 'english', 'title', 'name']);
     const titleEnglish = rawTitleEn ? String(rawTitleEn).trim() : `Hikayat ${storyNum}`;
 
-    // 4. Resolve Category (cycles across categories if unspecified)
+    // 4. Category
     const categoryOptions = ['wisdom', 'parable', 'akhlaaq', 'tarikh'];
     let category = getColumnValue(row, ['category', 'type', 'genre', 'تصنيف', 'النوع']);
     if (!category || !categoryOptions.includes(String(category).toLowerCase().trim())) {
@@ -159,15 +147,7 @@ async function importExcel() {
     const rawAudio = getColumnValue(row, ['audio_filename', 'audio', 'audio_file', 'filename', 'mp3', 'file']);
     const audioFilename = rawAudio ? String(rawAudio).trim() : `hikayat_${paddedNum}.mp3`;
 
-    // 7. Duration
-    let durationMs = Number(
-      getColumnValue(row, ['duration_ms', 'duration', 'duration_seconds', 'length', 'time']) || 45000
-    );
-    if (durationMs > 0 && durationMs < 1000) {
-      durationMs = durationMs * 1000;
-    }
-
-    // 8. Texts
+    // 7. Full Text
     const textArabic = String(
       getColumnValue(row, ['text_arabic', 'story_arabic', 'arabic_text', 'content_ar', 'النص']) || ''
     ).trim();
@@ -196,32 +176,32 @@ async function importExcel() {
         category,
         String(moralTheme),
         String(audioFilename),
-        durationMs,
+        45000,
       ],
     });
 
-    // Handle Segments
-    if (textArabic || textEnglish) {
-      const segments = autoSegmentText(textArabic, textEnglish, durationMs);
+    // Save full paragraphs to story_segments
+    if (textArabic) {
+      const paragraphs = parseParagraphs(textArabic, textEnglish);
       await db.execute({
         sql: `DELETE FROM story_segments WHERE story_id = ?`,
         args: [String(id)],
       });
 
-      for (const seg of segments) {
+      for (const p of paragraphs) {
         await db.execute({
           sql: `
             INSERT INTO story_segments (id, story_id, segment_order, text_arabic, text_english, audio_start_ms, audio_end_ms)
             VALUES (?, ?, ?, ?, ?, ?, ?)
           `,
           args: [
-            `${id}-seg-${seg.segment_order}`,
+            `${id}-seg-${p.segment_order}`,
             String(id),
-            seg.segment_order,
-            seg.text_arabic,
-            seg.text_english,
-            seg.audio_start_ms,
-            seg.audio_end_ms,
+            p.segment_order,
+            p.text_arabic,
+            p.text_english,
+            p.audio_start_ms,
+            p.audio_end_ms,
           ],
         });
       }
@@ -241,7 +221,7 @@ async function importExcel() {
     });
 
     importedCount++;
-    if (importedCount % 20 === 0 || importedCount === rows.length) {
+    if (importedCount % 25 === 0 || importedCount === rows.length) {
       console.log(`✓ Processed ${importedCount} / ${rows.length} stories...`);
     }
   }
