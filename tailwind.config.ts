@@ -26,7 +26,15 @@ export default {
         },
       },
       fontFamily: {
-        arabic: ["var(--font-arabic)", "Amiri", "Noto Naskh Arabic", "Traditional Arabic", "serif"],
+        arabic: [
+          "var(--font-kanz)",
+          "Kanz al Lulu",
+          "var(--font-arabic)",
+          "Amiri",
+          "Noto Naskh Arabic",
+          "Traditional Arabic",
+          "serif"
+        ],
         sans: ["var(--font-inter)", "system-ui", "-apple-system", "sans-serif"],
         mono: ["var(--font-mono)", "JetBrains Mono", "Courier New", "monospace"],
       },

@@ -1,6 +1,15 @@
 import type { Metadata } from 'next';
+import localFont from 'next/font/local';
 import { Amiri, Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+
+// Load Kanz al Lulu local font
+const kanzAlLulu = localFont({
+  src: '../public/fonts/KanzalLulu-Regular.ttf',
+  variable: '--font-kanz',
+  display: 'swap',
+  fallback: ['Amiri', 'Noto Naskh Arabic', 'serif'],
+});
 
 const amiri = Amiri({
   weight: ['400', '700'],
@@ -22,10 +31,10 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'حكاية | Hikayat — Bilingual Audio-Synced Storytelling Platform',
+  title: 'حكاية | Hikayat — Bilingual Storytelling Platform',
   description:
-    'A bilingual, audio-synchronized Arabic-English storytelling platform running on Turso Database (libSQL) and Cloudflare R2.',
-  keywords: ['Arabic storytelling', 'Hikayat', 'Bilingual audio sync', 'Turso libSQL', 'Cloudflare R2', 'Arabic lexicon'],
+    'A bilingual, Arabic-English storytelling platform running on Turso Database (libSQL) with custom Kanz al Lulu calligraphy typography.',
+  keywords: ['Arabic storytelling', 'Hikayat', 'Kanz al Lulu font', 'Turso libSQL', 'Arabic lexicon'],
 };
 
 export default function RootLayout({
@@ -35,8 +44,8 @@ export default function RootLayout({
 }) {
   return (
     <html
-      lang="en"
-      className={`${amiri.variable} ${inter.variable} ${jetbrainsMono.variable}`}
+      lang="ar"
+      className={`${kanzAlLulu.variable} ${amiri.variable} ${inter.variable} ${jetbrainsMono.variable}`}
     >
       <body className="min-h-screen flex flex-col bg-[#FBF9F5] text-[#1A1918]">
         {children}

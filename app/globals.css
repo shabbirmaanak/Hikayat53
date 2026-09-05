@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Kanz al Lulu';
+  src: url('/fonts/KanzalLulu-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     --background: #FBF9F5;
@@ -47,8 +55,9 @@ body {
   background: #C9C2B5;
 }
 
-/* Arabic Calligraphy Enhancements */
+/* Arabic / Kanz al Lulu Typography Enhancements */
 .font-arabic {
+  font-family: var(--font-kanz), 'Kanz al Lulu', var(--font-arabic), 'Amiri', serif;
   font-feature-settings: "cv01" on, "ss01" on;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
